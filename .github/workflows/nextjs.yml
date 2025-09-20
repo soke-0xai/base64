@@ -23,27 +23,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: |
-          curl -fsSL https://get.pnpm.io/install.sh | sh -
-
-      - name: Add pnpm to PATH
-        run: |
-          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm build
-
-      - name: Export static files
+      - name: Build and Export
         run: pnpm export
 
       - name: Upload artifact
