@@ -31,8 +31,11 @@ jobs:
 
       - name: Install pnpm
         run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+          curl -fsSL https://get.pnpm.io/install.sh | sh -
+
+      - name: Add pnpm to PATH
+        run: |
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: pnpm install
