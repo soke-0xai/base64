@@ -1,64 +1,82 @@
 # .github/workflows/nextjs.yml
 
+# ワークフローの名前
 name: Deploy Next.js site to Pages
 
 on:
+  # mainブランチへのpush時にトリガー
   push:
     branches: ["main"]
+  # GitHubのActionsタブから手動で実行できるようにする
   workflow_dispatch:
 
+# ワークフローが必要とする権限を設定
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# 同時実行に関する設定
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
+  # ビルド処理を行うジョブ
   build:
+    # 実行環境として最新のUbuntuを使用
     runs-on: ubuntu-latest
     steps:
+      # 1. リポジトリのコードをチェックアウト
       - name: Checkout
         uses: actions/checkout@v4
 
-      # pnpm/action-setup を setup-node の前に追加
-      - name: Install pnpm
+      # 2. pnpmをセットアップ (actions/setup-nodeより前に実行)
+      # これにより、以降のステップでpnpmコマンドが利用可能になる
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8 # 必要に応じてpnpmのバージョンを指定
+          version: 8 # 必要に応じてpnpmのバージョンを指定してください
 
+      # 3. Node.jsをセットアップ
+      # pnpmのキャッシュを有効にし、ビルドを高速化
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm' # これでpnpmのキャッシュが正しく機能します
+          cache: 'pnpm'
 
-      # 手動でのpnpmインストールとPATH設定は不要なため削除
-
+      # 4. 依存パッケージをインストール
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build with Next.js
+      # 5. Next.jsアプリケーションをビルド
+      # next.config.jsの`output: 'export'`設定に基づき、静的ファイルが'out'ディレクトリに生成される
+      - name: Build
         run: pnpm build
-      
-      # 'pnpm export' は通常 'pnpm build' に含まれるため不要
-      # next.config.js で `output: 'export'` を設定してください
 
+      # 6. ビルド成果物をアップロード
+      # このアーティファクトが、後のdeployジョブで使用される
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Next.jsのビルド出力ディレクトリを指定
           path: ./out
 
+  # デプロイ処理を行うジョブ
   deploy:
+    # buildジョブが成功した後に実行される
     needs: build
-    runs-on: ubuntu-latest
+    
+    # GitHub Pagesへのデプロイに必要な環境設定
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+      
+    # 実行環境として最新のUbuntuを使用
+    runs-on: ubuntu-latest
     steps:
+      # 1. GitHub Pagesにデプロイ
+      # buildジョブでアップロードされたアーティファクトを展開する
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
