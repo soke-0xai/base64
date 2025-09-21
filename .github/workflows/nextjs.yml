@@ -23,33 +23,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # pnpm/action-setup を setup-node の前に追加
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8 # 必要に応じてpnpmのバージョンを指定
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
+          cache: 'pnpm' # これでpnpmのキャッシュが正しく機能します
 
-      - name: Install pnpm
-        run: |
-          curl -fsSL https://get.pnpm.io/install.sh | sh -
-
-      - name: Add pnpm to PATH
-        run: |
-          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+      # 手動でのpnpmインストールとPATH設定は不要なため削除
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
+      - name: Build with Next.js
         run: pnpm build
-
-      - name: Export static files
-        run: pnpm export
+      
+      # 'pnpm export' は通常 'pnpm build' に含まれるため不要
+      # next.config.js で `output: 'export'` を設定してください
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          # Next.jsのビルド出力ディレクトリを指定
+          path: ./out
 
   deploy:
     needs: build
